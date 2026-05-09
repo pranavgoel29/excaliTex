@@ -1,0 +1,6 @@
+{
+  "framework": null,
+  "installCommand": "cd .. && yarn install",
+  "buildCommand": "cd .. && yarn build",
+  "outputDirectory": "build"
+}
