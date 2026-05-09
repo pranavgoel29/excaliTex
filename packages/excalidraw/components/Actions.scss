@@ -206,3 +206,29 @@
   --button-hover-bg: #363541;
   --button-bg: var(--color-surface-high);
 }
+
+/* Text-only math controls (no icon) in properties / compact bar */
+.excalidraw {
+  .ToolIcon_type_button.math-panel-action--text {
+    width: auto;
+    min-width: auto;
+
+    .ToolIcon__icon {
+      width: auto;
+      height: auto;
+      min-height: var(--default-button-size);
+      padding: 0 0.625rem;
+      color: var(--text-primary-color);
+      font-size: 0.8125rem;
+      font-weight: 500;
+    }
+  }
+}
+
+.compact-shape-actions {
+  .ToolIcon_type_button.math-panel-action--text .ToolIcon__icon {
+    width: auto;
+    min-width: max-content;
+    padding: 0 0.5rem;
+  }
+}

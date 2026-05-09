@@ -5,6 +5,7 @@ import { isExcalidrawPlusSignedUser } from "../app_constants";
 
 import { DebugFooter, isVisualDebuggerEnabled } from "./DebugCanvas";
 import { EncryptedIcon } from "./EncryptedIcon";
+import { TexoOcrFooterButton } from "./TexoOcrFooterButton";
 
 export const AppFooter = React.memo(
   ({ onChange }: { onChange: () => void }) => {
@@ -17,6 +18,7 @@ export const AppFooter = React.memo(
             alignItems: "center",
           }}
         >
+          <TexoOcrFooterButton />
           {isVisualDebuggerEnabled() && <DebugFooter onChange={onChange} />}
           {!isExcalidrawPlusSignedUser && <EncryptedIcon />}
         </div>

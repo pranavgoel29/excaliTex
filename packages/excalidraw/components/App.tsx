@@ -135,6 +135,7 @@ import {
   newLinearElement,
   newTextElement,
   refreshTextDimensions,
+  EXCALIDRAW_MATH_SUBTYPE,
   deepCopyElement,
   duplicateElements,
   hasBoundTextElement,
@@ -211,6 +212,9 @@ import {
   getApproxMinLineHeight,
   getMinTextElementWidth,
   ShapeCache,
+  elementWithCanvasCache,
+  isMathTextElement,
+  rasterizeKatexElement,
   getRenderOpacity,
   editGroupForSelectedElement,
   getElementsInGroup,
@@ -651,6 +655,9 @@ class App extends React.Component<AppProps, AppState> {
 
   public files: BinaryFiles = {};
   public imageCache: AppClassProperties["imageCache"] = new Map();
+  public katexRasterCache = new Map<string, HTMLCanvasElement>();
+  private readonly katexRasterSyncedVersion = new Map<string, number>();
+  private katexRasterSyncScheduled = false;
   private iFrameRefs = new Map<ExcalidrawElement["id"], HTMLIFrameElement>();
   /**
    * Indicates whether the embeddable's url has been validated for rendering.
@@ -1983,6 +1990,8 @@ class App extends React.Component<AppProps, AppState> {
         frameNameJSX = (
           <input
             autoFocus
+            aria-label={t("labels.editFrameName")}
+            title={t("labels.editFrameName")}
             value={frameNameInEdit}
             onChange={(e) => {
               this.scene.mutateElement(f, {
@@ -2345,6 +2354,7 @@ class App extends React.Component<AppProps, AppState> {
                             appState={this.state}
                             renderConfig={{
                               imageCache: this.imageCache,
+                              katexRasterCache: this.katexRasterCache,
                               isExporting: false,
                               renderGrid: isGridModeEnabled(this),
                               canvasBackgroundColor:
@@ -2368,6 +2378,7 @@ class App extends React.Component<AppProps, AppState> {
                               allElementsMap={allElementsMap}
                               renderConfig={{
                                 imageCache: this.imageCache,
+                                katexRasterCache: this.katexRasterCache,
                                 isExporting: false,
                                 renderGrid: false,
                                 canvasBackgroundColor:
@@ -3522,6 +3533,10 @@ class App extends React.Component<AppProps, AppState> {
       this.setState({ theme: this.props.theme });
     }
 
+    if (prevState.theme !== this.state.theme) {
+      this.katexRasterSyncedVersion.clear();
+    }
+
     this.excalidrawContainerRef.current?.classList.toggle(
       "theme--dark",
       this.state.theme === THEME.DARK,
@@ -3557,6 +3572,7 @@ class App extends React.Component<AppProps, AppState> {
       this.props.onChange?.(elements, this.state, this.files);
       this.onChangeEmitter.trigger(elements, this.state, this.files);
     }
+    this.scheduleKatexRasterSync();
   }
 
   private renderInteractiveSceneCallback = ({
@@ -4654,6 +4670,60 @@ class App extends React.Component<AppProps, AppState> {
     });
   };
 
+  private scheduleKatexRasterSync = () => {
+    if (this.katexRasterSyncScheduled || this.unmounted) {
+      return;
+    }
+    this.katexRasterSyncScheduled = true;
+    window.requestAnimationFrame(() => {
+      this.katexRasterSyncScheduled = false;
+      if (this.unmounted) {
+        return;
+      }
+      void this.flushKatexRasterCache();
+    });
+  };
+
+  private readonly flushKatexRasterCache = async () => {
+    const elements = this.scene.getNonDeletedElements();
+    let changed = false;
+    const mathIds = new Set<string>();
+
+    for (const el of elements) {
+      if (!isMathTextElement(el)) {
+        continue;
+      }
+      mathIds.add(el.id);
+      const v = this.katexRasterSyncedVersion.get(el.id);
+      if (v === el.version && this.katexRasterCache.has(el.id)) {
+        continue;
+      }
+      try {
+        const canvas = await rasterizeKatexElement(el, {
+          theme: this.state.theme,
+        });
+        this.katexRasterCache.set(el.id, canvas);
+        this.katexRasterSyncedVersion.set(el.id, el.version);
+        elementWithCanvasCache.delete(el);
+        changed = true;
+      } catch (err) {
+        console.warn("KaTeX raster error", err);
+      }
+    }
+
+    for (const id of this.katexRasterCache.keys()) {
+      if (!mathIds.has(id)) {
+        this.katexRasterCache.delete(id);
+        this.katexRasterSyncedVersion.delete(id);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.scene.triggerUpdate();
+    }
+  };
+
   private triggerRender = (
     /** force always re-renders canvas even if no change */
     force?: boolean,
@@ -4663,6 +4733,7 @@ class App extends React.Component<AppProps, AppState> {
     } else {
       this.setState({});
     }
+    this.scheduleKatexRasterSync();
   };
 
   /**
@@ -6189,6 +6260,7 @@ class App extends React.Component<AppProps, AppState> {
     container,
     autoEdit = true,
     initialCaretSceneCoords,
+    subtype,
   }: {
     /** X position to insert text at */
     sceneX: number;
@@ -6199,6 +6271,7 @@ class App extends React.Component<AppProps, AppState> {
     container?: ExcalidrawTextContainer | null;
     autoEdit?: boolean;
     initialCaretSceneCoords?: { x: number; y: number };
+    subtype?: typeof EXCALIDRAW_MATH_SUBTYPE;
   }) => {
     let shouldBindToContainer = false;
 
@@ -6328,6 +6401,7 @@ class App extends React.Component<AppProps, AppState> {
             : container.angle
           : (0 as Radians),
         frameId,
+        ...(subtype ? { subtype } : {}),
       });
 
     if (!existingTextElement && shouldBindToContainer && container) {
@@ -9162,6 +9236,22 @@ class App extends React.Component<AppProps, AppState> {
     this.insertNewElement(element);
 
     return element;
+  };
+
+  /** Opens the text editor for a new KaTeX math element at the given scene coordinates. */
+  public insertMathTextAtSceneCoords = ({
+    sceneX,
+    sceneY,
+  }: {
+    sceneX: number;
+    sceneY: number;
+  }) => {
+    this.startTextEditing({
+      sceneX,
+      sceneY,
+      insertAtParentCenter: false,
+      subtype: EXCALIDRAW_MATH_SUBTYPE,
+    });
   };
 
   private newImagePlaceholder = ({

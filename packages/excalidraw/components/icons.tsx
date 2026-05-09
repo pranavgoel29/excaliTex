@@ -411,6 +411,19 @@ export const TextIcon = createIcon(
   tablerIconProps,
 );
 
+// tabler-icons: math-function
+export const MathFormulaIcon = createIcon(
+  <g strokeWidth="1.5">
+    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+    <path d="M14 19l2 2l4 -4" />
+    <path d="M12 21h-8v-18h8" />
+    <path d="M12 9l-4 4l4 4" />
+    <path d="M12 9l4 -4" />
+    <path d="M16 5l4 4" />
+  </g>,
+  tablerIconProps,
+);
+
 export const TextSizeIcon = createIcon(
   <g stroke="currentColor" strokeWidth="1.5">
     <path stroke="none" d="M0 0h24v24H0z" fill="none" />

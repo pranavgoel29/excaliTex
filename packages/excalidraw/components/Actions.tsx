@@ -16,6 +16,7 @@ import {
   isElbowArrow,
   isImageElement,
   isLinearElement,
+  isMathTextElement,
   isTextElement,
   isArrowElement,
   hasStrokeColor,
@@ -231,6 +232,10 @@ export const SelectedShapeActions = ({
           {(appState.activeTool.type === "text" ||
             suppportsHorizontalAlign(targetElements, elementsMap)) &&
             renderAction("changeTextAlign")}
+          {!appState.viewModeEnabled &&
+            targetElements.some(
+              (el) => isTextElement(el) && !isMathTextElement(el),
+            ) && renderAction("convertSelectedTextToMath")}
         </>
       )}
 
@@ -691,6 +696,17 @@ const CombinedExtraActions = ({
             onClose={() => {}}
           >
             <div className="selected-shape-actions">
+              {!appState.viewModeEnabled &&
+                targetElements.some(
+                  (el) => isTextElement(el) && !isMathTextElement(el),
+                ) && (
+                  <fieldset>
+                    <legend>{t("labels.mathTools")}</legend>
+                    <div className="buttonList">
+                      {renderAction("convertSelectedTextToMath")}
+                    </div>
+                  </fieldset>
+                )}
               <fieldset>
                 <legend>{t("labels.layers")}</legend>
                 <div className="buttonList">
@@ -864,6 +880,14 @@ export const CompactShapeActions = ({
             container={container}
             elementsMap={elementsMap}
           />
+          {!appState.viewModeEnabled &&
+            targetElements.some(
+              (el) => isTextElement(el) && !isMathTextElement(el),
+            ) && (
+              <div className="compact-action-item">
+                {renderAction("convertSelectedTextToMath")}
+              </div>
+            )}
         </>
       )}
 
@@ -999,6 +1023,14 @@ export const MobileShapeActions = ({
               container={container}
               elementsMap={elementsMap}
             />
+            {!appState.viewModeEnabled &&
+              targetElements.some(
+                (el) => isTextElement(el) && !isMathTextElement(el),
+              ) && (
+                <div className="compact-action-item">
+                  {renderAction("convertSelectedTextToMath")}
+                </div>
+              )}
           </>
         )}
 

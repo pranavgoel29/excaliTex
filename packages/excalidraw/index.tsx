@@ -28,6 +28,7 @@ import polyfill from "./polyfill";
 import "./css/app.scss";
 import "./css/styles.scss";
 import "./fonts/fonts.css";
+import "katex/dist/katex.min.css";
 
 import type {
   AppProps,

@@ -37,6 +37,8 @@ export type StaticCanvasRenderConfig = {
   elementsPendingErasure: ElementsPendingErasure;
   pendingFlowchartNodes: PendingExcalidrawElements | null;
   theme: AppState["theme"];
+  /** KaTeX rasters for math text (`subtype: "math"`). */
+  katexRasterCache?: ReadonlyMap<string, HTMLCanvasElement>;
 };
 
 export type SVGRenderConfig = {
@@ -56,6 +58,7 @@ export type SVGRenderConfig = {
    */
   reuseImages: boolean;
   theme: AppState["theme"];
+  katexRasterCache?: ReadonlyMap<string, HTMLCanvasElement>;
 };
 
 export type InteractiveCanvasRenderConfig = {

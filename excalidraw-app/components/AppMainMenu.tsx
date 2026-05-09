@@ -14,6 +14,7 @@ import { LanguageList } from "../app-language/LanguageList";
 import { isExcalidrawPlusSignedUser } from "../app_constants";
 
 import { saveDebugState } from "./DebugCanvas";
+import { TexoOcrMainMenuItem } from "./TexoOcrMainMenuItem";
 
 export const AppMainMenu: React.FC<{
   onCollabDialogOpen: () => any;
@@ -37,6 +38,7 @@ export const AppMainMenu: React.FC<{
       )}
       <MainMenu.DefaultItems.CommandPalette className="highlighted" />
       <MainMenu.DefaultItems.SearchMenu />
+      <TexoOcrMainMenuItem />
       <MainMenu.DefaultItems.Help />
       <MainMenu.DefaultItems.ClearCanvas />
       <MainMenu.Separator />

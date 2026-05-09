@@ -35,6 +35,8 @@ import {
 
 import { syncInvalidIndices } from "@excalidraw/element";
 
+import { buildKatexRasterCacheForElements } from "@excalidraw/element";
+
 import { type Mutable } from "@excalidraw/common/utility-types";
 
 import { newTextElement } from "@excalidraw/element";
@@ -242,6 +244,12 @@ export const exportToCanvas = async (
     files,
   });
 
+  const exportTheme = appState.exportWithDarkMode ? THEME.DARK : THEME.LIGHT;
+  const katexRasterCache = await buildKatexRasterCacheForElements(
+    elementsForRender,
+    { theme: exportTheme },
+  );
+
   renderStaticScene({
     canvas,
     rc: rough.canvas(canvas),
@@ -273,6 +281,7 @@ export const exportToCanvas = async (
       elementsPendingErasure: new Set(),
       pendingFlowchartNodes: null,
       theme: appState.exportWithDarkMode ? THEME.DARK : THEME.LIGHT,
+      katexRasterCache,
     },
   });
 
@@ -474,6 +483,12 @@ export const exportToSvg = async (
 
   const renderEmbeddables = opts?.renderEmbeddables ?? false;
 
+  const exportTheme = exportWithDarkMode ? THEME.DARK : THEME.LIGHT;
+  const katexRasterCache = await buildKatexRasterCacheForElements(
+    elementsForRender,
+    { theme: exportTheme },
+  );
+
   renderSceneToSvg(
     elementsForRender,
     toBrandedType<RenderableElementsMap>(arrayToMap(elementsForRender)),
@@ -497,6 +512,7 @@ export const exportToSvg = async (
         : new Map(),
       reuseImages: opts?.reuseImages ?? true,
       theme: exportWithDarkMode ? THEME.DARK : THEME.LIGHT,
+      katexRasterCache,
     },
   );
 

@@ -22,7 +22,8 @@ import {
 } from "./containerCache";
 import { LinearElementEditor } from "./linearElementEditor";
 
-import { measureText } from "./textMeasurements";
+import { measureTextElementContent } from "./math/measure";
+import { isMathTextElement } from "./math/typeChecks";
 import { wrapText } from "./textWrapping";
 import {
   isBoundToContainer,
@@ -74,7 +75,10 @@ export const redrawTextBoundingBox = (
 
   boundTextUpdates.text = textElement.text;
 
-  if (container || !textElement.autoResize) {
+  if (
+    !isMathTextElement(textElement) &&
+    (container || !textElement.autoResize)
+  ) {
     maxWidth = container
       ? getBoundTextMaxWidth(container, textElement)
       : textElement.width;
@@ -85,10 +89,9 @@ export const redrawTextBoundingBox = (
     );
   }
 
-  const metrics = measureText(
+  const metrics = measureTextElementContent(
+    textElement,
     boundTextUpdates.text,
-    getFontString(textElement),
-    textElement.lineHeight,
   );
 
   // Note: only update width for unwrapped text and bound texts (which always have autoResize set to true)
@@ -167,18 +170,14 @@ export const handleBindTextResize = (
       shouldMaintainAspectRatio ||
       (transformHandleType !== "n" && transformHandleType !== "s")
     ) {
-      if (text) {
+      if (text && !isMathTextElement(textElement)) {
         text = wrapText(
           textElement.originalText,
           getFontString(textElement),
           maxWidth,
         );
       }
-      const metrics = measureText(
-        text,
-        getFontString(textElement),
-        textElement.lineHeight,
-      );
+      const metrics = measureTextElementContent(textElement, text);
       nextHeight = metrics.height;
       nextWidth = metrics.width;
     }

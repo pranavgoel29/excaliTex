@@ -20,6 +20,9 @@ import {
   getElementAbsoluteCoords,
   getResizedElementAbsoluteCoords,
 } from "./bounds";
+import { measureKatexDisplay } from "./math/katexRaster";
+import { EXCALIDRAW_MATH_SUBTYPE } from "./math/constants";
+import { isMathTextElement } from "./math/typeChecks";
 import { newElementWith } from "./mutateElement";
 import { getBoundTextMaxWidth } from "./textElement";
 import { normalizeText, measureText } from "./textMeasurements";
@@ -247,39 +250,45 @@ export const newTextElement = (
     containerId?: ExcalidrawTextContainer["id"] | null;
     lineHeight?: ExcalidrawTextElement["lineHeight"];
     autoResize?: ExcalidrawTextElement["autoResize"];
+    subtype?: ExcalidrawTextElement["subtype"];
   } & ElementConstructorOpts,
 ): NonDeleted<ExcalidrawTextElement> => {
-  const fontFamily = opts.fontFamily || DEFAULT_FONT_FAMILY;
-  const fontSize = opts.fontSize || DEFAULT_FONT_SIZE;
-  const lineHeight = opts.lineHeight || getLineHeight(fontFamily);
-  const text = normalizeText(opts.text);
-  const metrics = measureText(
-    text,
-    getFontString({ fontFamily, fontSize }),
-    lineHeight,
-  );
-  const textAlign = opts.textAlign || DEFAULT_TEXT_ALIGN;
-  const verticalAlign = opts.verticalAlign || DEFAULT_VERTICAL_ALIGN;
+  const { subtype, ...baseOpts } = opts;
+  const fontFamily = baseOpts.fontFamily || DEFAULT_FONT_FAMILY;
+  const fontSize = baseOpts.fontSize || DEFAULT_FONT_SIZE;
+  const lineHeight = baseOpts.lineHeight || getLineHeight(fontFamily);
+  const text = normalizeText(baseOpts.text);
+  const metrics =
+    subtype === EXCALIDRAW_MATH_SUBTYPE
+      ? measureKatexDisplay(text, fontSize)
+      : measureText(
+          text,
+          getFontString({ fontFamily, fontSize }),
+          lineHeight,
+        );
+  const textAlign = baseOpts.textAlign || DEFAULT_TEXT_ALIGN;
+  const verticalAlign = baseOpts.verticalAlign || DEFAULT_VERTICAL_ALIGN;
   const offsets = getTextElementPositionOffsets(
     { textAlign, verticalAlign },
     metrics,
   );
 
   const textElementProps: ExcalidrawTextElement = {
-    ..._newElementBase<ExcalidrawTextElement>("text", opts),
+    ..._newElementBase<ExcalidrawTextElement>("text", baseOpts),
     text,
     fontSize,
     fontFamily,
     textAlign,
     verticalAlign,
-    x: opts.x - offsets.x,
-    y: opts.y - offsets.y,
+    x: baseOpts.x - offsets.x,
+    y: baseOpts.y - offsets.y,
     width: metrics.width,
     height: metrics.height,
-    containerId: opts.containerId || null,
-    originalText: opts.originalText ?? text,
-    autoResize: opts.autoResize ?? true,
+    containerId: baseOpts.containerId || null,
+    originalText: baseOpts.originalText ?? text,
+    autoResize: baseOpts.autoResize ?? true,
     lineHeight,
+    ...(subtype ? { subtype } : {}),
   };
 
   const textElement: ExcalidrawTextElement = newElementWith(
@@ -300,11 +309,14 @@ const getAdjustedDimensions = (
   width: number;
   height: number;
 } => {
-  let { width: nextWidth, height: nextHeight } = measureText(
-    nextText,
-    getFontString(element),
-    element.lineHeight,
-  );
+  let { width: nextWidth, height: nextHeight } =
+    element.subtype === EXCALIDRAW_MATH_SUBTYPE
+      ? measureKatexDisplay(nextText, element.fontSize)
+      : measureText(
+          nextText,
+          getFontString(element),
+          element.lineHeight,
+        );
 
   // wrapped text
   if (!element.autoResize) {
@@ -320,11 +332,14 @@ const getAdjustedDimensions = (
     !element.containerId &&
     element.autoResize
   ) {
-    const prevMetrics = measureText(
-      element.text,
-      getFontString(element),
-      element.lineHeight,
-    );
+    const prevMetrics =
+      element.subtype === EXCALIDRAW_MATH_SUBTYPE
+        ? measureKatexDisplay(element.text, element.fontSize)
+        : measureText(
+            element.text,
+            getFontString(element),
+            element.lineHeight,
+          );
     const offsets = getTextElementPositionOffsets(element, {
       width: nextWidth - prevMetrics.width,
       height: nextHeight - prevMetrics.height,
@@ -426,7 +441,8 @@ export const refreshTextDimensions = (
   if (textElement.isDeleted) {
     return;
   }
-  if (container || !textElement.autoResize) {
+  const isMath = isMathTextElement(textElement);
+  if (!isMath && (container || !textElement.autoResize)) {
     text = wrapText(
       text,
       getFontString(textElement),

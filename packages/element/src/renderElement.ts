@@ -63,6 +63,7 @@ import {
   isMagicFrameElement,
   isImageElement,
 } from "./typeChecks";
+import { isMathTextElement } from "./math/typeChecks";
 import { getContainingFrame } from "./frame";
 import { getCornerRadius } from "./utils";
 
@@ -561,33 +562,60 @@ const drawElementOnCanvas = (
             : element.strokeColor;
         context.textAlign = element.textAlign as CanvasTextAlign;
 
-        // Canvas does not support multiline text by default
-        const lines = element.text.replace(/\r\n?/g, "\n").split("\n");
+        if (isMathTextElement(element)) {
+          const raster = renderConfig.katexRasterCache?.get(element.id);
+          if (raster) {
+            context.drawImage(
+              raster,
+              0,
+              0,
+              raster.width,
+              raster.height,
+              0,
+              0,
+              element.width,
+              element.height,
+            );
+          } else {
+            context.setLineDash([4, 4]);
+            context.strokeRect(0, 0, element.width, element.height);
+            context.setLineDash([]);
+            context.textAlign = "left";
+            context.fillText(
+              element.text.slice(0, 80) || "…",
+              0,
+              element.fontSize,
+            );
+          }
+        } else {
+          // Canvas does not support multiline text by default
+          const lines = element.text.replace(/\r\n?/g, "\n").split("\n");
 
-        const horizontalOffset =
-          element.textAlign === "center"
-            ? element.width / 2
-            : element.textAlign === "right"
-            ? element.width
-            : 0;
+          const horizontalOffset =
+            element.textAlign === "center"
+              ? element.width / 2
+              : element.textAlign === "right"
+              ? element.width
+              : 0;
 
-        const lineHeightPx = getLineHeightInPx(
-          element.fontSize,
-          element.lineHeight,
-        );
-
-        const verticalOffset = getVerticalOffset(
-          element.fontFamily,
-          element.fontSize,
-          lineHeightPx,
-        );
-
-        for (let index = 0; index < lines.length; index++) {
-          context.fillText(
-            lines[index],
-            horizontalOffset,
-            index * lineHeightPx + verticalOffset,
+          const lineHeightPx = getLineHeightInPx(
+            element.fontSize,
+            element.lineHeight,
           );
+
+          const verticalOffset = getVerticalOffset(
+            element.fontFamily,
+            element.fontSize,
+            lineHeightPx,
+          );
+
+          for (let index = 0; index < lines.length; index++) {
+            context.fillText(
+              lines[index],
+              horizontalOffset,
+              index * lineHeightPx + verticalOffset,
+            );
+          }
         }
         context.restore();
         if (shouldTemporarilyAttach) {

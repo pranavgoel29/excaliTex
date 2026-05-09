@@ -17,6 +17,8 @@ import { getShortcutKey } from "../../shortcut";
 
 import {
   actionClearCanvas,
+  actionConvertSelectedTextToMath,
+  actionInsertMathText,
   actionLink,
   actionToggleSearchMenu,
 } from "../../actions";
@@ -374,6 +376,8 @@ function CommandPaletteInner({
         actionManager.actions.objectsSnapMode,
         actionManager.actions.toggleShortcuts,
         actionManager.actions.selectAll,
+        actionInsertMathText,
+        actionConvertSelectedTextToMath,
         actionManager.actions.toggleElementLock,
         actionManager.actions.unlockAllElements,
         actionManager.actions.stats,

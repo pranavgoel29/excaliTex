@@ -145,7 +145,9 @@ export type ActionName =
   | "wrapSelectionInFrame"
   | "toggleLassoTool"
   | "toggleShapeSwitch"
-  | "togglePolygon";
+  | "togglePolygon"
+  | "insertMathText"
+  | "convertSelectedTextToMath";
 
 export type PanelComponentProps = {
   elements: readonly ExcalidrawElement[];
