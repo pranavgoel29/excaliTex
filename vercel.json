@@ -1,5 +1,10 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
+  "installCommand": "yarn install",
+  "buildCommand": "yarn build",
+  "outputDirectory": "excalidraw-app/build",
+  "devCommand": "yarn start",
   "public": true,
   "headers": [
     {
@@ -65,8 +70,5 @@
       ],
       "destination": "https://marketplace.visualstudio.com/items?itemName=pomdtr.excalidraw-editor"
     }
-  ],
-  "installCommand": "yarn install",
-  "buildCommand": "yarn build",
-  "outputDirectory": "excalidraw-app/build"
+  ]
 }
