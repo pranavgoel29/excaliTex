@@ -166,6 +166,8 @@ export default defineConfig(({ mode }) => {
             // via a static import from the main bundle, defeating lazy
             // loading. So we exclude it by name instead.
             "**/CodeMirrorEditor-*.js",
+            // ONNX / Hugging Face runtime WASM (~24MB); exceeds Workbox precache default
+            "**/ort*.wasm",
           ],
           runtimeCaching: [
             {
