@@ -64,6 +64,14 @@ const init = async (progress_callback: (data: ProgressInfo) => void) => {
 
   globalThis.postMessage({
     status: WORKER_STATUS.Ready,
+    runtime: {
+      modelId: MODEL_NAME,
+      allowLocalModels: env.allowLocalModels,
+      allowRemoteModels: env.allowRemoteModels,
+      useBrowserCache: env.useBrowserCache,
+      remoteHost: env.remoteHost,
+      cacheKey: env.cacheKey,
+    },
   });
 };
 

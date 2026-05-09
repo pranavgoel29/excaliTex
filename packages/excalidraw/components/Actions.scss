@@ -214,6 +214,7 @@
     min-width: auto;
 
     .ToolIcon__icon {
+      box-sizing: border-box;
       width: auto;
       height: auto;
       min-height: var(--default-button-size);
@@ -221,6 +222,24 @@
       color: var(--text-primary-color);
       font-size: 0.8125rem;
       font-weight: 500;
+      border: 1px solid var(--default-border-color);
+      border-radius: var(--border-radius-lg);
+      background-color: var(--button-bg, var(--color-surface-low));
+    }
+
+    &:hover:not(:disabled) .ToolIcon__icon {
+      border-color: var(--color-primary);
+      background-color: var(--button-hover-bg, var(--color-surface-high));
+    }
+
+    &:active:not(:disabled) .ToolIcon__icon {
+      background-color: var(--button-gray-3);
+    }
+
+    &:disabled .ToolIcon__icon {
+      border-color: var(--color-surface-high);
+      background-color: var(--color-surface-lowest);
+      opacity: 0.65;
     }
   }
 }

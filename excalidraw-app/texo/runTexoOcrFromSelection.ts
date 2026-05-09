@@ -19,6 +19,45 @@ import { ensureTexoOcrReady, texoOcrPredict } from "./texoOcrClient";
 
 type TexoOcrMode = "text" | "math";
 
+/** Decode common OCR / tokenizer quirks so newlines and width lay out correctly on the canvas. */
+function normalizeTexoOcrOutput(raw: string, mode: TexoOcrMode): string {
+  let t = raw.replaceAll("\r\n", "\n");
+  // Tokenizers sometimes emit a literal backslash-n; avoid touching `\neq`, `\nabla`, etc.
+  t = t.replaceAll(/\\n(?![a-zA-Z])/g, "\n");
+  t = t.trim();
+
+  if (mode !== "math") {
+    return t;
+  }
+
+  // TeX line breaks after "\\" split across lines in the decoded string.
+  t = t.replaceAll(/\\\s*\n\s*/g, String.raw` \\ `);
+
+  if (!t.includes("\n")) {
+    return t;
+  }
+
+  // Multi-line TeX pasted into one KaTeX display: collapse whitespace but keep "\\" row markers.
+  if (/\\begin\s*\{/i.test(t)) {
+    return t.replaceAll("\n", " ").replaceAll(/[ \t]{2,}/g, " ").trim();
+  }
+
+  const lines = t
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length <= 1) {
+    return lines[0] ?? t.replaceAll("\n", " ").trim();
+  }
+
+  return (
+    String.raw`\begin{aligned} ` +
+    lines.join(String.raw` \\ `) +
+    String.raw` \end{aligned}`
+  );
+}
+
 /** Minimum short edge (px) so tiny scene selections are not nearly blank before the worker resizes to 384². */
 const OCR_RASTER_MIN_SHORT_EDGE_PX = 640;
 
@@ -82,7 +121,7 @@ export async function runTexoOcrFromSelection(
 
   api.setToast({
     message:
-      "Loading formula model (first run downloads weights from Hugging Face)…",
+      "Loading formula model\n(first run downloads weights from Hugging Face)…",
     closable: true,
     duration: 12000,
   });
@@ -116,7 +155,7 @@ export async function runTexoOcrFromSelection(
     });
 
     const latex = await texoOcrPredict(file, key);
-    const trimmed = latex.trim();
+    const trimmed = normalizeTexoOcrOutput(latex, mode);
 
     if (!trimmed) {
       api.setToast({
@@ -163,7 +202,7 @@ export async function runTexoOcrFromSelection(
   } catch (e) {
     console.error(e);
     api.setToast({
-      message: e instanceof Error ? e.message : "Formula recognition failed.",
+      message: "error",
       closable: true,
     });
   }
